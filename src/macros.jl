@@ -76,7 +76,7 @@ Helper function for macros to transform expression objects containing kernel cod
     3. `condition`: `Expr` that is evaluated immediately before kernel code in each iteration. If none, pass `:()`.
     4. `idxvars`: Names for the index variables for each loop, e.g. `[:i, gensym(), :k]`
     5. `idxsets`: Sets used to define iteration for each loop, e.g. `[1:3, [:red,:blue], S]`
-    6. `sym`: A `Symbol`/`Expr` containing the element type of the container that is being iterated over, e.g. `:AffExpr` or `:Variable`
+    6. `sym`: A `Symbol`/`Expr` containing the element type of the container that is being iterated over, e.g. `:AffExpr` or `:VariableRef`
     7. `requestedcontainer`: Argument that is passed through to `generatedcontainer`. Either `:Auto`, `:Array`, `:JuMPArray`, or `:Dict`.
     8. `lowertri`: `Bool` keyword argument that is `true` if the iteration is over a cartesian array and should only iterate over the lower triangular entries, filling upper triangular entries with copies, e.g. `x[1,3] === x[3,1]`, and `false` otherwise.
 """
@@ -265,8 +265,8 @@ function sense_to_set(sense::Symbol)
 end
 const ScalarPolyhedralSets = Union{MOI.LessThan,MOI.GreaterThan,MOI.EqualTo,MOI.Interval}
 
-constructconstraint!(_error::Function, v::Variable, set::MOI.AbstractScalarSet) = SingleVariableConstraint(v, set)
-constructconstraint!(_error::Function, v::Vector{Variable}, set::MOI.AbstractVectorSet) = VectorOfVariablesConstraint(v, set)
+constructconstraint!(_error::Function, v::VariableRef, set::MOI.AbstractScalarSet) = SingleVariableConstraint(v, set)
+constructconstraint!(_error::Function, v::Vector{VariableRef}, set::MOI.AbstractVectorSet) = VectorOfVariablesConstraint(v, set)
 
 constructconstraint!(_error::Function, α::Number, set::MOI.AbstractScalarSet) = constructconstraint!(_error, convert(AffExpr, α), set)
 function constructconstraint!(_error::Function, aff::AffExpr, set::S) where S <: Union{MOI.LessThan,MOI.GreaterThan,MOI.EqualTo}
@@ -304,7 +304,7 @@ end
 # end
 
 # three-argument constructconstraint! is used for two-sided constraints.
-constructconstraint!(_error::Function, v::Variable, lb::Real, ub::Real) = SingleVariableConstraint(v, MOI.Interval(lb, ub))
+constructconstraint!(_error::Function, v::VariableRef, lb::Real, ub::Real) = SingleVariableConstraint(v, MOI.Interval(lb, ub))
 
 function constructconstraint!(_error::Function, aff::AffExpr, lb::Real, ub::Real)
     offset = aff.constant
@@ -807,7 +807,7 @@ macro expression(args...)
     if isa(c,Expr)
         code = quote
             $code
-            (isa($newaff,AffExpr) || isa($newaff,Number) || isa($newaff,Variable)) || error("Collection of expressions with @expression must be linear. For quadratic expressions, use your own array.")
+            (isa($newaff,AffExpr) || isa($newaff,Number) || isa($newaff,VariableRef)) || error("Collection of expressions with @expression must be linear. For quadratic expressions, use your own array.")
         end
     end
     code = quote
@@ -870,14 +870,14 @@ mutable struct VariableInfo{S, T, U, V}
 end
 
 # Returns the type of what `constructvariable!` would return with these starting positional arguments.
-variabletype(m::Model) = Variable
+variabletype(m::Model) = VariableRef
 # Returns a new variable belonging to the model `m`. Additional positional arguments can be used to dispatch the call to a different method.
 # The return type should only depends on the positional arguments for `variabletype` to make sense.
 function constructvariable!(m::Model, _error::Function, info::VariableInfo; extra_kwargs...)
     for (kwarg, _) in extra_kwargs
         _error("Unrecognized keyword argument $kwarg")
     end
-    v = Variable(m)
+    v = VariableRef(m)
     if info.haslb
         setlowerbound(v, info.lowerbound)
     end
