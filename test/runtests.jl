@@ -18,21 +18,21 @@ const MOI = MathOptInterface
 const MOIT = MOI.Test
 const MOIU = MOI.Utilities
 
-include("derivatives.jl")
-include("derivatives_coloring.jl")
-
-#include("print.jl")
-include("containers.jl")
-include("model.jl")
-include("variable.jl")
-include("expr.jl")
-include("objective.jl")
-include("constraint.jl")
-include("nlp.jl")
-include("generate_and_solve.jl")
-include("print.jl")
+#include("derivatives.jl")
+#include("derivatives_coloring.jl")
+#
+##include("print.jl")
+#include("containers.jl")
+#include("model.jl")
+#include("variable.jl")
 #include("expr.jl")
-#include("operator.jl")
+#include("objective.jl")
+#include("constraint.jl")
+#include("nlp.jl")
+#include("generate_and_solve.jl")
+#include("print.jl")
+##include("expr.jl")
+##include("operator.jl")
 include("macros.jl")
 
 # Fuzzer of macros to build expressions
